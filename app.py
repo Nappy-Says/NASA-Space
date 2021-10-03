@@ -1,15 +1,15 @@
 import time
 
-import socketio
+# import socketio
 from utils import *
 from models.models import *
 from flask_cors import CORS
 from datetime import datetime
-from flask_socketio import SocketIO
+# from flask_socketio import SocketIO
 from configparser import ConfigParser
 from pyorbital.orbital import Orbital
-from pyorbital.orbital import OrbitalError
 from flask import Flask, request, jsonify
+from pyorbital.orbital import OrbitalError
 
 
 app = Flask(__name__)
@@ -17,7 +17,7 @@ app.config['SECRET_KEY'] = 'SZWAQ@AWSErfr6GYuijmo(I*UYTDRXCTVB{+_{":?><MN'
 register_blueprints(app)
 CORS(app)
 
-socket = SocketIO(app, cors_allowed_origins="*")
+# socket = SocketIO(app, cors_allowed_origins="*")
 # socket = socketio.Server(cors_allowed_origins='*')
 # app.wsgi_app = socketio.WSGIApp(socket, app.wsgi_app)
 
@@ -31,20 +31,18 @@ orbit = []
 def get_more_data(dtobj):
     global orbit
 
-    data = []
+    data = {
+        'date':str(dtobj).split()[0],
+        'time': str(dtobj).split()[1],
+        'data': []
+    }
+
     for i in orbit:
-
         val = list(i.values())[0].get_lonlatalt(dtobj)
-
-        print(orbit, 'asdawdwoedsv')
-        print(list(i.values())[0], 'asdawdwoedsv')
-
-        data.append({
+        data['data'].append({
             'id': list(i.keys())[0],
-            'date': str(dtobj).split()[0],
 
-            'time': str(dtobj).split()[1],
-            'type': '',
+            'type': identification_of_type_of_object(list(i.keys())[0]),
 
             'x': val[0],
             'y': val[1],
@@ -66,9 +64,6 @@ def add():
 
     global orbit
     lines = Lines.select().where(Lines.satellite == satellite.id)
-
-    print(_id, satellite.id, satellite.name, lines)
-
     _orbit = Orbital(satellite=satellite.name,
                      line1=lines[0].line, line2=lines[1].line)
 
@@ -151,7 +146,7 @@ def route(timeseconds=0):
     minute = datestamp.minute
     second = datestamp.second
 
-    socket.sleep(1)
+    time.sleep(1)
 
     dtobj = datetime(year, month, day, hour, minute, second)
     dataa = get_more_data(dtobj)
