@@ -23,3 +23,27 @@ def identification_of_type_of_object(objID):
         return 'other'
     
     return 'satellite'
+
+
+def get_more_data(dtobj):
+    global orbit
+
+    data = {
+        'date': str(dtobj).split()[0],
+        'time': str(dtobj).split()[1],
+        'data': []
+    }
+
+    for i in orbit:
+        val = list(i.values())[0].get_lonlatalt(dtobj)
+        data['data'].append({
+            'id': list(i.keys())[0],
+
+            'type': identification_of_type_of_object(list(i.keys())[0]),
+
+            'x': val[0],
+            'y': val[1],
+            'z': val[2]
+        })
+
+    return data
