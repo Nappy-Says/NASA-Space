@@ -8,7 +8,7 @@ config.read('config.ini')
 
 while True:
     r = requests.get(config['network']['ip_address']+'/satelliteio/get')
+    print(r.content)
 
-    print(r.content.decode())
 
-    sleep(1)
+    # sleep(1)
