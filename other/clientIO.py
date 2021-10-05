@@ -7,7 +7,8 @@ config.sections()
 config.read('config.ini')
 
 socket_io = socketio.Client()
-socket_io.connect(config['conf']['ip_address'])
+# socket_io.connect(config['conf']['ip_address'])
+socket_io.connect('http://0.0.0.0:5000/')
 second = 57600
 
 

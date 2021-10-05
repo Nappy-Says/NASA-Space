@@ -7,7 +7,7 @@ config.sections()
 config.read('config.ini')
 
 while True:
-    r = requests.get(config['network']['ip_address']+'/satelliteio/get')
+    r = requests.get('https://127.0.0.1:5000/satelliteio/get')
     print(r.content)
 
 
