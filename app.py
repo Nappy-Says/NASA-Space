@@ -1,5 +1,4 @@
 import socket
-import socketio
 from json import dumps
 from models.models import *
 from flask_cors import CORS
@@ -16,7 +15,7 @@ config.sections()
 config.read('config.ini')
 
 app = Flask(__name__)
-socket = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+socket = SocketIO(app, cors_allowed_origins="*")
 
 
 app.secret_key = config['keys']['secret_app']
@@ -225,45 +224,9 @@ def get_detail_data_about_object(setArg):
         dtobj = datetime(year, month, day, hour, minute, second)
         dataa = object_filter(dtobj, 'all')
 
+        print('emited')
         socket.emit('location', dataa)
 
 
-@app.route('/v1/satelliteio/get')
-def get_detail_data_about_object():
-    """
-    Sending detailed information about each satellite (or another object)
-
-    * Mode:
-        - reverse
-        - stream real-time
-        - forward
-    """
-    # datetimetamp = datetime.fromtimestamp(int(
-    # mktime(datetime.now().timetuple())))
-    global temp_time_data
-
-    datetimetamp = fnc()
-
-    print(temp_time_data)
-
-    day = datetimetamp.day
-    hour = datetimetamp.hour
-    year = datetimetamp.year
-    month = datetimetamp.month
-    minute = datetimetamp.minute
-    second = datetimetamp.second
-
-    # sleep(1)
-
-    dtobj = datetime(year, month, day, hour, minute, second)
-    dataa = object_filter(dtobj, 'all')
-
-    return jsonify(str(dataa).replace(' ', '')), 200
-
-
 if __name__ == '__main__':
-    socket.run(app, host='0.0.0.0', port=8000, debug=True)
-    # app.run(host='192.168.0.119', port=8000, debug=True)
-
-
-# http://103.246.146.95:5000/v1/satelliteio/get
+    socket.run(app, host='0.0.0.0', port=8000)
