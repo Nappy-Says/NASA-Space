@@ -16,11 +16,9 @@ config.sections()
 config.read('config.ini')
 
 app = Flask(__name__)
-socket = SocketIO(app, cors_allowed_origins="*")
-# socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+socket = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
 
 
-# app.wsgi_app = socketio.WSGIApp(socket, app.wsgi_app)
 app.secret_key = config['keys']['secret_app']
 register_blueprints(app)
 CORS(app)
@@ -31,11 +29,11 @@ temp_time_data = {
     'teleport': 0,
     'status': 'stream',
     'saved_time': int(mktime(datetime.now().timetuple())),
-    'speed': 1
 }
 
 save_time = int(mktime(datetime.now().timetuple()))
 now_time = int(mktime(datetime.now().timetuple()))
+speed = 1
 
 
 def object_filter(dtobj, type):
@@ -147,14 +145,17 @@ def fnc(status='0'):
     global temp_time_data
     global now_time
     global save_time
+    global speed
 
     lst = save_time
-    speed = temp_time_data['speed']
     status = temp_time_data['status']
 
     if status == 'pause':
         now_time += 1
         return datetime.fromtimestamp(lst)
+
+    if (status == 'all' and speed != 0) or (status == 'stream' and speed != 0):
+        return datetime.fromtimestamp(int(mktime(datetime.now().timetuple()))*speed)
 
     if status == 'backward':
         now = int(mktime(datetime.now().timetuple()))
@@ -183,14 +184,18 @@ def get_detail_data_about_object(setArg):
         - forward
     """
     print(dumps(setArg), 'asdasdasd')
-    global orbit, temp_time_data, temp_time_data, save_time, now_time
+    global orbit
+    global temp_time_data
+    global save_time
+    global now_time
+    global speed
 
     _status = setArg.get('status', 'all')
     _time = setArg.get('seconds', 0)
     _speed = setArg.get('speed', 0)
 
     if _speed != 0:
-        temp_time_data['speed'] = _speed
+        speed = int(_speed)
 
     if _status == 'stream' or _status == 'reset':
         temp_time_data['status'] = _status
@@ -248,7 +253,7 @@ def get_detail_data_about_object():
     minute = datetimetamp.minute
     second = datetimetamp.second
 
-    sleep(1)
+    # sleep(1)
 
     dtobj = datetime(year, month, day, hour, minute, second)
     dataa = object_filter(dtobj, 'all')
@@ -257,9 +262,8 @@ def get_detail_data_about_object():
 
 
 if __name__ == '__main__':
-    socket.run(app, host='192.168.0.119', port=8000, debug=True)
+    socket.run(app, host='0.0.0.0', port=8000, debug=True)
     # app.run(host='192.168.0.119', port=8000, debug=True)
 
 
 # http://103.246.146.95:5000/v1/satelliteio/get
-    
