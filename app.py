@@ -1,3 +1,5 @@
+import socket
+import socketio
 from json import dumps
 from models.models import *
 from flask_cors import CORS
@@ -15,7 +17,10 @@ config.read('config.ini')
 
 app = Flask(__name__)
 socket = SocketIO(app, cors_allowed_origins="*")
+# socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+
+# app.wsgi_app = socketio.WSGIApp(socket, app.wsgi_app)
 app.secret_key = config['keys']['secret_app']
 register_blueprints(app)
 CORS(app)
@@ -37,10 +42,14 @@ def object_filter(dtobj, type):
     global orbit
 
     data = {
-        'date': str(dtobj).split()[0],
-        'time': str(dtobj).split()[1],
-        'data': []
+        "date": str(dtobj).split()[0],
+        "time": str(dtobj).split()[1],
+        "data": []
     }
+
+    # datastr3 =
+    # datastr += f"'date':{str(dtobj).split()[0]},'time':{str(dtobj).split()[1]},'data':["
+    # datastr2 = f'{str(dtobj).split()[0]}&{str(dtobj).split()[1]}'
 
     for i in orbit:
         try:
@@ -48,17 +57,32 @@ def object_filter(dtobj, type):
 
             if typee == type or type == 'all':
                 val = list(i.values())[0].get_lonlatalt(dtobj)
-                data['data'].append({
-                    'id': list(i.keys())[0],
-                    'type': typee,
-                    'x': val[0],
-                    'y': val[1],
-                    'z': val[2]
+                # datastr += f"'id':{list(i.keys())[0]},'type':{typee},'x':{str(val[0])[:str(val[0]).find('.')+5]},'y':{str(val[1])[:str(val[1]).find('.')+5]},'z':{str(val[2])[:str(val[2]).find('.')+5]}"
+
+                # ss = {
+                #     'id': list(i.keys())[0],
+                #     'type': typee,
+                #     'x': str(val[0])[:str(val[0]).find('.')+5],
+                #     'y': str(val[1])[:str(val[1]).find('.')+5],
+                #     'z': str(val[2])[:str(val[2]).find('.')+5]
+                # }
+                # datastr3.append(str(ss))
+
+                data["data"].append({
+                    "id": list(i.keys())[0],
+                    "type": typee,
+                    "x": str(val[0])[:str(val[0]).find('.')+5],
+                    "y": str(val[1])[:str(val[1]).find('.')+5],
+                    "z": str(val[2])[:str(val[2]).find('.')+5]
                 })
 
+                # datastr2 += f"&{list(i.keys())[0]}&{typee}&{str(val[0])[:str(val[0]).find('.')+5]}&{str(val[1])[:str(val[1]).find('.')+5]}&{str(val[2])[:str(val[2]).find('.')+5]}"
+
         except Exception as err:
-            print(err)
+            print(err, 'object_filte()')
             pass
+
+    data = str(data).replace("'", '"')
 
     return data
 
@@ -119,7 +143,6 @@ def remove_object():
     return jsonify({'message': 'Satellite not found'}), 404
 
 
-
 def fnc(status='0'):
     global temp_time_data
     global now_time
@@ -148,6 +171,7 @@ def fnc(status='0'):
 def connect():
     print('connected')
 
+
 @socket.event
 def get_detail_data_about_object(setArg):
     """
@@ -158,10 +182,10 @@ def get_detail_data_about_object(setArg):
         - stream real-time
         - forward
     """
-    print(dumps(setArg))
+    print(dumps(setArg), 'asdasdasd')
     global orbit, temp_time_data, temp_time_data, save_time, now_time
 
-    _status = setArg.get('status')
+    _status = setArg.get('status', 'all')
     _time = setArg.get('seconds', 0)
     _speed = setArg.get('speed', 0)
 
@@ -178,9 +202,8 @@ def get_detail_data_about_object(setArg):
     else:
         save_time = int(mktime(fnc().timetuple()))
         now_time = int(mktime(datetime.now().timetuple()))
-    
-    temp_time_data['status'] = _status
 
+    temp_time_data['status'] = _status
 
     while True:
         datetimetamp = fnc()
@@ -195,11 +218,47 @@ def get_detail_data_about_object(setArg):
         sleep(1)
 
         dtobj = datetime(year, month, day, hour, minute, second)
-        dataa = object_filter(dtobj, 'debris')
+        dataa = object_filter(dtobj, 'all')
 
         socket.emit('location', dataa)
 
 
+@app.route('/v1/satelliteio/get')
+def get_detail_data_about_object():
+    """
+    Sending detailed information about each satellite (or another object)
+
+    * Mode:
+        - reverse
+        - stream real-time
+        - forward
+    """
+    # datetimetamp = datetime.fromtimestamp(int(
+    # mktime(datetime.now().timetuple())))
+    global temp_time_data
+
+    datetimetamp = fnc()
+
+    print(temp_time_data)
+
+    day = datetimetamp.day
+    hour = datetimetamp.hour
+    year = datetimetamp.year
+    month = datetimetamp.month
+    minute = datetimetamp.minute
+    second = datetimetamp.second
+
+    sleep(1)
+
+    dtobj = datetime(year, month, day, hour, minute, second)
+    dataa = object_filter(dtobj, 'all')
+
+    return jsonify(str(dataa).replace(' ', '')), 200
+
 
 if __name__ == '__main__':
-    socket.run(app, host='0.0.0.0', debug=True)
+    socket.run(app, host='192.168.0.119', port=8000, debug=True)
+    # app.run(host='192.168.0.119', port=8000, debug=True)
+
+
+# http://103.246.146.95:5000/v1/satelliteio/get

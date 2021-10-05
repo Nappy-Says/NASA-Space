@@ -8,19 +8,19 @@ config.read('config.ini')
 
 socket_io = socketio.Client()
 # socket_io.connect(config['conf']['ip_address'])
-socket_io.connect('http://0.0.0.0:5000/')
+socket_io.connect('http://192.168.0.119:8000/')
 second = 57600
 
 
 @socket_io.event
 def connect():
-    print('time acceleration')
+    print('connect')
 
     global second
     second += 1
 
     socket_io.emit(
-        'location_handler_time_multiply_acceleration', second)
+        'get_detail_data_about_object', {'status': 'stream'})
 
 
 @socket_io.event
