@@ -1,4 +1,3 @@
-import socket
 from json import dumps
 from models.models import *
 from flask_cors import CORS
@@ -37,6 +36,9 @@ speed = 1
 
 def object_filter(dtobj, type):
     global orbit
+    global speed
+    global now_time
+    global save_time
 
     data = {
         "date": str(dtobj).split()[0],
@@ -50,6 +52,7 @@ def object_filter(dtobj, type):
 
     for i in orbit:
         try:
+
             typee = identification_of_type_of_object(list(i.keys())[0])
 
             if typee == type or type == 'all':
@@ -76,6 +79,10 @@ def object_filter(dtobj, type):
                 # datastr2 += f"&{list(i.keys())[0]}&{typee}&{str(val[0])[:str(val[0]).find('.')+5]}&{str(val[1])[:str(val[1]).find('.')+5]}&{str(val[2])[:str(val[2]).find('.')+5]}"
 
         except Exception as err:
+            if err == ValueError:
+                speed = 1
+                save_time = int(mktime(datetime.now().timetuple()))
+                now_time = int(mktime(datetime.now().timetuple()))
             print(err, 'object_filte()')
             pass
 
@@ -158,11 +165,24 @@ def fnc(status='0'):
 
     if status == 'backward':
         now = int(mktime(datetime.now().timetuple()))
-        return datetime.fromtimestamp(lst - (now - now_time) * speed)
+
+        try:
+            return datetime.fromtimestamp(lst - (now - now_time) * speed)
+        except Exception:
+            speed = 1
+            save_time = int(mktime(datetime.now().timetuple()))
+            now_time = int(mktime(datetime.now().timetuple()))
+            return datetime.fromtimestamp(lst - (now - now_time))
 
     if status == 'forward':
         now = int(mktime(datetime.now().timetuple()))
-        return datetime.fromtimestamp(lst + (now - now_time) * speed)
+        try:
+            return datetime.fromtimestamp(lst + (now - now_time) * speed)
+        except Exception:
+            speed = 1
+            save_time = int(mktime(datetime.now().timetuple()))
+            now_time = int(mktime(datetime.now().timetuple()))
+            return datetime.fromtimestamp(lst + (now - now_time))
 
     return datetime.fromtimestamp(int(mktime(datetime.now().timetuple())))
 
@@ -170,6 +190,12 @@ def fnc(status='0'):
 @socket.on('connect')
 def connect():
     print('connected')
+
+
+@socket.event
+def disconnect():
+    print('disconnect')
+    socket
 
 
 @socket.event
@@ -219,14 +245,12 @@ def get_detail_data_about_object(setArg):
         minute = datetimetamp.minute
         second = datetimetamp.second
 
-        sleep(1)
-
         dtobj = datetime(year, month, day, hour, minute, second)
         dataa = object_filter(dtobj, 'all')
 
-        print('emited')
         socket.emit('location', dataa)
+        sleep(1)
 
 
 if __name__ == '__main__':
-    socket.run(app, host='0.0.0.0', port=8000)
+    socket.run(app, host='103.246.146.95', port=8000)

@@ -6,7 +6,8 @@ pp = 0
 
 d = datetime.now()
 for i in range(1000000000000000):
-    r = requests.post(f'http://0.0.0.0:8000/v1/satelliteio/add?id={i+1}')
+    r = requests.post(
+        f'http://103.246.146.95:8000/v1/satelliteio/add?id={i+1}')
 
     if r.status_code == 200:
         p += 1
